@@ -76,6 +76,8 @@ class Invitation(db.Model):
     used = db.Column(db.Boolean, default=False, nullable=False)
     used_at = db.Column(db.DateTime, nullable=True)
     created = db.Column(db.DateTime, default=lambda: datetime.now(UTC), nullable=False)
+    created_by_id = db.Column(db.Integer, db.ForeignKey("admin_account.id"), nullable=True)
+    created_by = db.relationship("AdminAccount", backref=db.backref("invitations", lazy=True))
 
     # DEPRECATED: Legacy single-user relationship for backward compatibility
     # Will be removed in a future version - use 'users' relationship instead
@@ -317,6 +319,10 @@ class AdminAccount(db.Model, UserMixin):
     unique *username* and a hashed *password* (scrypt).  Because we inherit
     :class:`flask_login.UserMixin`, instances can be returned directly from
     ``login_user`` / ``user_loader``.
+    
+    Roles:
+    - 'admin': Full access to all features including user management and settings
+    - 'guest': Limited access to creating invitations only
     """
 
     __tablename__ = "admin_account"
@@ -324,9 +330,14 @@ class AdminAccount(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String, unique=True, nullable=False)
     password_hash = db.Column(db.String, nullable=False)
+    role = db.Column(db.String, nullable=False, default='admin')
     created_at = db.Column(
         db.DateTime, default=lambda: datetime.now(UTC), nullable=False
     )
+    
+    # Jellyfin authentication fields
+    jellyfin_server = db.Column(db.String, nullable=True)
+    jellyfin_user_id = db.Column(db.String, nullable=True)
 
     # ── helpers ────────────────────────────────────────────────────────────
     def set_password(self, raw_password: str):
@@ -347,6 +358,29 @@ class AdminAccount(db.Model, UserMixin):
         )
 
         return check_password_hash(self.password_hash, raw_password)
+
+    def is_admin(self) -> bool:
+        """Check if this account has admin role."""
+        return self.role == 'admin'
+    
+    def is_guest(self) -> bool:
+        """Check if this account has guest role."""
+        return self.role == 'guest'
+    
+    def has_permission(self, permission: str) -> bool:
+        """Check if this account has a specific permission.
+        
+        Args:
+            permission: Permission name (e.g., 'manage_users', 'manage_settings', 'create_invites')
+        """
+        if self.is_admin():
+            return True  # Admins have all permissions
+        
+        if self.is_guest():
+            # Guests can only create invitations
+            return permission in ['create_invites', 'view_invites']
+            
+        return False
 
 
 class Notification(db.Model):
@@ -411,6 +445,18 @@ class AdminUser(UserMixin):
     def username(self):
         setting = Settings.query.filter_by(key="admin_username").first()
         return setting.value if setting else None
+    
+    def is_admin(self) -> bool:
+        """Legacy admin is always considered admin role."""
+        return True
+    
+    def is_guest(self) -> bool:
+        """Legacy admin is never guest role."""
+        return False
+    
+    def has_permission(self, permission: str) -> bool:
+        """Legacy admin has all permissions."""
+        return True
 
 
 class MediaServer(db.Model):

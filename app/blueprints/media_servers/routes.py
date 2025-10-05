@@ -13,6 +13,7 @@ from flask import (
 )
 from flask_login import login_required
 
+from app.decorators import admin_required
 from app.extensions import db
 from app.models import Library, MediaServer, User
 from app.services.media.service import list_users_for_server, scan_libraries_for_server
@@ -59,7 +60,7 @@ def _check_connection(data: dict):
 
 
 @media_servers_bp.route("", methods=["GET"])  # list all
-@login_required
+@admin_required
 def list_servers():
     servers = MediaServer.query.order_by(MediaServer.name).all()
     if request.headers.get("HX-Request"):
@@ -68,7 +69,7 @@ def list_servers():
 
 
 @media_servers_bp.route("/create", methods=["GET", "POST"])
-@login_required
+@admin_required
 def create_server():
     if request.method == "POST":
         data = request.form.to_dict()
@@ -135,7 +136,7 @@ def create_server():
 
 
 @media_servers_bp.post("/<int:server_id>/scan-libraries")
-@login_required
+@admin_required
 def scan_server_libraries(server_id):
     server = MediaServer.query.get_or_404(server_id)
     try:
@@ -173,7 +174,7 @@ def scan_server_libraries(server_id):
 
 
 @media_servers_bp.route("/<int:server_id>/edit", methods=["GET", "POST"])
-@login_required
+@admin_required
 def edit_server(server_id):
     server = MediaServer.query.get_or_404(server_id)
     if request.method == "POST":
@@ -216,7 +217,7 @@ def edit_server(server_id):
 
 
 @media_servers_bp.route("/", methods=["DELETE"])
-@login_required
+@admin_required
 def delete_server():
     server_id = request.args.get("delete")
     if server_id:
@@ -240,7 +241,7 @@ def delete_server():
 
 
 @media_servers_bp.get("/<int:server_id>/ping")
-@login_required
+@admin_required
 def ping_server(server_id):
     """Return JSON reflecting whether a media server is currently reachable."""
     server = MediaServer.query.get_or_404(server_id)
@@ -278,7 +279,7 @@ def ping_server(server_id):
 
 
 @media_servers_bp.get("/<int:server_id>/statistics")
-@login_required
+@admin_required
 def get_server_statistics(server_id):
     """Return comprehensive statistics for a specific media server."""
     server = MediaServer.query.get_or_404(server_id)
@@ -312,7 +313,7 @@ def get_server_statistics(server_id):
 
 
 @media_servers_bp.get("/<int:server_id>/health")
-@login_required
+@admin_required
 def get_server_health(server_id):
     """Return lightweight health statistics without triggering user sync."""
     server = MediaServer.query.get_or_404(server_id)
@@ -351,7 +352,7 @@ def get_server_health(server_id):
 
 
 @media_servers_bp.get("/statistics/all")
-@login_required
+@admin_required
 def get_all_statistics():
     """Return statistics for all configured media servers."""
     servers = MediaServer.query.all()
@@ -394,7 +395,7 @@ def get_all_statistics():
 
 
 @media_servers_bp.get("/statistics/<server_type>")
-@login_required
+@admin_required
 def get_statistics_by_type(server_type):
     """Return statistics for all servers of a specific type."""
     servers = MediaServer.query.filter_by(server_type=server_type).all()
@@ -441,7 +442,7 @@ def get_statistics_by_type(server_type):
 
 
 @media_servers_bp.get("/health/all")
-@login_required
+@admin_required
 def get_all_health():
     """Return lightweight health statistics for all servers without triggering user sync."""
     servers = MediaServer.query.all()

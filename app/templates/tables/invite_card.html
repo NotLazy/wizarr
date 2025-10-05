@@ -131,6 +131,9 @@ accept datetime or string #} {{ v|human_date }} {%- endmacro %}
                         hx-swap="outerHTML swap:0.5s"
                         title="{{ _('Delete invite') }}"
                         data-delete="{{ invite.code }}"
+                        {% if current_user.is_guest() and invite.created_by_id != current_user.id %}
+                        style="display: none;"
+                        {% endif %}
                     >
                         <svg
                             class="w-5 h-5"
@@ -153,6 +156,14 @@ accept datetime or string #} {{ v|human_date }} {%- endmacro %}
                 srv.type|server_name_tag(srv.name) }} {% endfor %} {{
                 relative_expiry_badge(invite) }}
             </div>
+
+            <!-- creator information (show for admins, or for guests if they didn't create it) -->
+            {% if invite.created_by and (current_user.is_admin() or (current_user.is_guest() and invite.created_by_id != current_user.id)) %}
+            <div class="text-xs text-gray-500 dark:text-gray-400">
+                <span class="opacity-70">{{ _("Created by") }}:</span>
+                <span class="ml-1 font-medium">{{ invite.created_by.username }}</span>
+            </div>
+            {% endif %}
 
             <!-- used by summary (only show when relevant) -->
             {% if invite.all_used %}

@@ -49,7 +49,21 @@ def login():
         login_user(account, remember=bool(request.form.get("remember")))
         return redirect("/")
 
-    # fetch the stored admin credentials
+    # ── 2) Jellyfin authentication for existing accounts ────────────
+    if account := AdminAccount.query.filter_by(username=username).first():
+        if account.jellyfin_server:
+            # This is a Jellyfin-linked account, try Jellyfin authentication
+            from app.services.jellyfin_auth import authenticate_jellyfin_user
+            
+            try:
+                success, server_name, user_info = authenticate_jellyfin_user(username, password)
+                if success and server_name == account.jellyfin_server:
+                    login_user(account, remember=bool(request.form.get("remember")))
+                    return redirect("/")
+            except Exception as e:
+                logging.warning(f"Jellyfin authentication failed for existing user '{username}': {e}")
+
+    # ── 3) Legacy single-admin (Settings table) ─────────────────────
     admin_username = (
         db.session.query(Settings.value).filter_by(key="admin_username").scalar()
     )
@@ -66,6 +80,23 @@ def login():
         login_user(AdminUser(), remember=bool(request.form.get("remember")))
         return redirect("/")
 
+    # ── 4) New Jellyfin user authentication and account creation ────
+    # If no local account exists, try Jellyfin authentication
+    if not AdminAccount.query.filter_by(username=username).first():
+        from app.services.jellyfin_auth import authenticate_jellyfin_user, create_guest_account_from_jellyfin
+        
+        try:
+            success, server_name, user_info = authenticate_jellyfin_user(username, password)
+            if success:
+                # Create a new guest account for this Jellyfin user
+                account = create_guest_account_from_jellyfin(username, server_name, user_info)
+                login_user(account, remember=bool(request.form.get("remember")))
+                logging.info(f"Created and logged in new guest account for Jellyfin user '{username}'")
+                return redirect("/")
+        except Exception as e:
+            logging.warning(f"Jellyfin authentication failed for new user '{username}': {e}")
+
+    # ── 5) Authentication failed ─────────────────────────────────────
     # Get IP address: prefer Cloudflare's header, then X-Forwarded-For, then remote_addr
     client_ip = (
         request.headers.get("CF-Connecting-IP")

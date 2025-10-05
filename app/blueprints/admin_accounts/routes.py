@@ -3,6 +3,7 @@ from flask_babel import _
 from flask_login import current_user, login_required
 
 from app.blueprints.admin.routes import admin_bp
+from app.decorators import admin_required
 from app.extensions import db
 from app.forms.admin import AdminCreateForm, AdminUpdateForm
 from app.models import AdminAccount, WebAuthnCredential
@@ -11,7 +12,7 @@ admin_accounts_bp = Blueprint("admin_accounts", __name__, url_prefix="/settings/
 
 
 @admin_accounts_bp.route("", methods=["GET"])
-@login_required
+@admin_required
 def list_admins():
     """Render list of admin accounts."""
     admins = AdminAccount.query.order_by(AdminAccount.username).all()
@@ -22,7 +23,7 @@ def list_admins():
 
 # ── Create ─────────────────────────────────────────────────────────────
 @admin_accounts_bp.route("/create", methods=["GET", "POST"])
-@login_required
+@admin_required
 def create_admin():
     form = AdminCreateForm()
     if form.validate_on_submit():
@@ -33,6 +34,7 @@ def create_admin():
         else:
             acc = AdminAccount()
             acc.username = form.username.data
+            acc.role = form.role.data  # Set role from form
             if form.password.data:
                 acc.set_password(form.password.data)
             db.session.add(acc)
@@ -47,7 +49,7 @@ def create_admin():
 
 # ── Edit ───────────────────────────────────────────────────────────────
 @admin_accounts_bp.route("/<int:admin_id>/edit", methods=["GET", "POST"])
-@login_required
+@admin_required
 def edit_admin(admin_id):
     acc = AdminAccount.query.get_or_404(admin_id)
     form = AdminUpdateForm(obj=acc)
@@ -60,6 +62,7 @@ def edit_admin(admin_id):
             ]
         else:
             acc.username = form.username.data
+            acc.role = form.role.data  # Update role from form
             if form.password.data:
                 acc.set_password(form.password.data)
             db.session.commit()
@@ -72,7 +75,7 @@ def edit_admin(admin_id):
 
 # ── Delete ─────────────────────────────────────────────────────────────
 @admin_accounts_bp.route("/", methods=["DELETE"])
-@login_required
+@admin_required
 def delete_admin():
     """Delete an admin account and return updated list for HTMX requests."""
     admin_id = request.args.get("delete")
@@ -96,14 +99,14 @@ def delete_admin():
 
 
 @admin_bp.route("/profile", methods=["GET"])
-@login_required
+@admin_required
 def user_profile():
     """Render user profile page."""
     return render_template("profile.html")
 
 
 @admin_bp.route("/profile/change-password", methods=["POST"])
-@login_required
+@admin_required
 def change_password():
     """Change user password with HTMX response."""
 

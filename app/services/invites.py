@@ -4,6 +4,7 @@ import secrets
 import string
 from typing import Any
 
+from flask_login import current_user
 from sqlalchemy import and_  # type: ignore
 
 from app.extensions import db
@@ -105,6 +106,7 @@ def create_invite(form: Any) -> Invitation:
         used=False,
         used_at=None,
         created=now,
+        created_by_id=current_user.id if current_user.is_authenticated and hasattr(current_user, 'id') and current_user.id != 'admin' else None,
         expires=expires_lookup.get(form.get("expires")),
         unlimited=bool(form.get("unlimited")),
         duration=form.get("duration") or None,

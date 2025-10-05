@@ -8,6 +8,7 @@ from flask import Blueprint, Response, redirect, render_template, request, url_f
 from flask_babel import _
 from flask_login import login_required
 
+from app.decorators import admin_required, guest_allowed, permission_required
 from app.extensions import db, limiter
 from app.models import (
     Identity,
@@ -58,11 +59,18 @@ def dashboard():
 @admin_bp.route("/home")
 @login_required
 def home():
+    from flask_login import current_user
+    
     if not request.headers.get("HX-Request"):
         return redirect(url_for(".dashboard"))
-
     servers = MediaServer.query.order_by(MediaServer.name).all()
-    return render_template("admin/home.html", servers=servers)
+    # Check user role and redirect appropriately
+    if current_user.is_authenticated and hasattr(current_user, 'is_guest') and current_user.is_guest():
+        # Guest users should see invites
+        return render_template("admin/invites.html", servers=servers)
+    else:
+        # Admin users see the home dashboard
+        return render_template("admin/home.html", servers=servers)
 
 
 # HTMX endpoint for now playing cards
@@ -70,7 +78,15 @@ def home():
 @login_required
 def now_playing_cards():
     try:
-        sessions = get_now_playing_all_servers()
+        from flask_login import current_user
+
+        # Check user role and redirect appropriately
+        if current_user.is_authenticated and hasattr(current_user, 'is_guest') and current_user.is_guest():
+            # Guest users should see invites
+            sessions = None
+        else:
+            # Admin users see the home dashboard
+            sessions = get_now_playing_all_servers()
         return render_template("admin/now_playing_cards.html", sessions=sessions)
     except Exception as e:
         logging.error(f"Failed to get now playing data: {e}")
@@ -81,7 +97,7 @@ def now_playing_cards():
 
 # Invitations – landing page
 @admin_bp.route("/invite", methods=["GET", "POST"])
-@login_required
+@guest_allowed
 @limiter.limit("30 per minute")
 def invite():
     if not request.headers.get("HX-Request"):
@@ -170,7 +186,7 @@ def invite():
 
 # standalone /invites page (shell around HTMX)
 @admin_bp.route("/invites")
-@login_required
+@guest_allowed
 def invites():
     if not request.headers.get("HX-Request"):
         return redirect(url_for(".dashboard"))
@@ -179,7 +195,7 @@ def invites():
 
 
 @admin_bp.route("/invite/table", methods=["POST"])
-@login_required
+@guest_allowed
 def invite_table():
     """
     HTMX partial that renders the invitation cards grid.
@@ -199,18 +215,37 @@ def invite_table():
         # Find the invitation to delete
         invitation = Invitation.query.filter_by(code=code).first()
         if invitation:
-            # Delete the invitation - CASCADE will handle association table cleanup
-            db.session.delete(invitation)
-            db.session.commit()
+            # Check if user has permission to delete this invitation
+            from flask_login import current_user
+            can_delete = True
+            
+            if current_user.is_authenticated and hasattr(current_user, 'is_guest') and current_user.is_guest():
+                # Guest users can only delete invitations they created
+                can_delete = invitation.created_by_id == current_user.id
+            
+            if can_delete:
+                # Delete the invitation - CASCADE will handle association table cleanup
+                db.session.delete(invitation)
+                db.session.commit()
 
     # ------------------------------------------------------------------
-    # 2. Base query (libraries + servers)
+    # 2. Base query (libraries + servers) - filter by user role
     # ------------------------------------------------------------------
-    query = Invitation.query.options(
+    base_query = Invitation.query.options(
         db.joinedload(Invitation.libraries).joinedload(Library.server),
         db.joinedload(Invitation.servers),
         db.joinedload(Invitation.users),  # NEW: Load all users who used this invitation
-    ).order_by(Invitation.created.desc())
+        db.joinedload(Invitation.created_by),  # Load the creator information
+    )
+    
+    # Filter invitations based on user role
+    from flask_login import current_user
+    if current_user.is_authenticated and hasattr(current_user, 'is_guest') and current_user.is_guest():
+        # Guest users can only see invitations they created
+        query = base_query.filter(Invitation.created_by_id == current_user.id).order_by(Invitation.created.desc())
+    else:
+        # Admin users can see all invitations
+        query = base_query.order_by(Invitation.created.desc())
 
     # NOTE: If an invitation can point to *multiple* servers,
     # Invitation.server_id won’t filter correctly.
@@ -221,15 +256,8 @@ def invite_table():
         except ValueError:
             server_id = None
         if server_id:
-            # join to association (assuming relationship Invitation.servers)
-            query = Invitation.query.options(
-                db.joinedload(Invitation.libraries).joinedload(Library.server),
-                db.joinedload(Invitation.servers),
-                db.joinedload(
-                    Invitation.users
-                ),  # NEW: Load all users who used this invitation
-            ).order_by(Invitation.created.desc())
-
+            # Apply server filter to existing role-based query (don't recreate it)
+            # The query is already filtered by role above, just add server filtering
             srv = MediaServer.query.get(server_id)
             server_type = srv.server_type if srv else None
         else:
@@ -373,7 +401,7 @@ def _rel_string(target: datetime.datetime, now: datetime.datetime) -> str:
 
 # Users
 @admin_bp.route("/users")
-@login_required
+@admin_required
 def users():
     if not request.headers.get("HX-Request"):
         return redirect(url_for(".dashboard"))
@@ -391,7 +419,7 @@ def users():
 
 
 @admin_bp.route("/users/table")
-@login_required
+@admin_required
 def users_table():
     server_id = request.args.get("server")
     order = request.args.get("order", "name_asc")
@@ -434,7 +462,7 @@ def users_table():
 
 
 @admin_bp.route("/user/<int:db_id>", methods=["GET", "POST"])
-@login_required
+@admin_required
 def user_detail(db_id: int):
     """
     • GET  → return the enhanced per-server expiry edit modal
@@ -500,7 +528,7 @@ def user_detail(db_id: int):
 
 
 @admin_bp.post("/invite/scan-libraries")
-@login_required
+@admin_required
 def invite_scan_libraries():
     """Scan libraries for one or multiple selected servers and return grouped checkboxes."""
 
@@ -551,7 +579,7 @@ def invite_scan_libraries():
 
 
 @admin_bp.post("/users/link")
-@login_required
+@admin_required
 def link_accounts():
     ids = request.form.getlist("uids")
     if len(ids) < 2:
@@ -576,7 +604,7 @@ def link_accounts():
 
 
 @admin_bp.post("/users/unlink")
-@login_required
+@admin_required
 def unlink_account():
     """Unlink one or more selected user accounts from their shared identity.
 
@@ -623,7 +651,7 @@ def unlink_account():
 
 
 @admin_bp.post("/users/bulk-delete")
-@login_required
+@admin_required
 def bulk_delete_users():
     ids = request.form.getlist("uids")
     for uid in ids:
@@ -636,7 +664,7 @@ def bulk_delete_users():
 
 
 @admin_bp.post("/users/<int:user_id>/remove-from-server/<int:server_id>")
-@login_required
+@admin_required
 def remove_user_from_server_endpoint(user_id: int, server_id: int):
     """Remove a user from a specific server while preserving other server accounts."""
     from app.services.media.service import remove_user_from_server
@@ -653,7 +681,7 @@ def remove_user_from_server_endpoint(user_id: int, server_id: int):
 
 
 @admin_bp.get("/users/<int:user_id>/delete-modal")
-@login_required
+@admin_required
 def delete_user_modal(user_id: int):
     """Show the delete user confirmation modal."""
     # Find the user and all their accounts (if grouped by identity)
@@ -680,7 +708,7 @@ def delete_user_modal(user_id: int):
 
 
 @admin_bp.post("/users/process-deletion")
-@login_required
+@admin_required
 def process_user_deletion():
     """Process the user deletion based on selected server accounts."""
     selected_accounts = request.form.getlist("server_accounts")
@@ -757,7 +785,7 @@ def _group_users_for_display(user_list):
 
 
 @admin_bp.route("/user/<int:db_id>/details")
-@login_required
+@admin_required
 def user_details_modal(db_id: int):
     """Return a read-only modal with extended information about a user."""
     from app.services.user_details import UserDetailsService
@@ -778,7 +806,7 @@ def user_details_modal(db_id: int):
 
 
 @admin_bp.route("/identity/<int:identity_id>", methods=["GET", "POST"])
-@login_required
+@admin_required
 def edit_identity(identity_id):
     """Create / update a nickname for an Identity row via HTMX modal."""
     from app.models import Identity
@@ -949,7 +977,7 @@ def server_health_card():
 
 
 @admin_bp.route("/expired-users/table")
-@login_required
+@admin_required
 def expired_users_table():
     """Return a table of expired users for monitoring."""
     try:
@@ -965,7 +993,7 @@ def expired_users_table():
 
 
 @admin_bp.route("/expiring-users/table")
-@login_required
+@admin_required
 def expiring_users_table():
     """Return a table of users expiring within the next week."""
     try:
@@ -981,7 +1009,7 @@ def expiring_users_table():
 
 
 @admin_bp.route("/hx/users/sync")
-@login_required
+@admin_required
 def sync_users():
     """Sync users from media servers and return success status."""
     try:

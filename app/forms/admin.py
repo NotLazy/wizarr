@@ -1,6 +1,6 @@
 from flask_babel import lazy_gettext as _l
 from flask_wtf import FlaskForm
-from wtforms import PasswordField, StringField
+from wtforms import PasswordField, SelectField, StringField
 from wtforms.validators import DataRequired, EqualTo, Length, Optional, Regexp
 
 _username_validators = [
@@ -31,6 +31,15 @@ class AdminCreateForm(FlaskForm):
             EqualTo("password", message=str(_l("Passwords must match."))),
         ],
     )
+    role = SelectField(
+        str(_l("Role")),
+        choices=[
+            ('admin', str(_l("Administrator"))),
+            ('guest', str(_l("Guest")))
+        ],
+        default='admin',
+        validators=[DataRequired()]
+    )
 
 
 class AdminUpdateForm(FlaskForm):
@@ -46,6 +55,14 @@ class AdminUpdateForm(FlaskForm):
             Optional(),
             EqualTo("password", message=str(_l("Passwords must match."))),
         ],
+    )
+    role = SelectField(
+        str(_l("Role")),
+        choices=[
+            ('admin', str(_l("Administrator"))),
+            ('guest', str(_l("Guest")))
+        ],
+        validators=[DataRequired()]
     )
 
     def validate(self, extra_validators=None):

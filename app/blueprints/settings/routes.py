@@ -15,6 +15,7 @@ from flask import (
 from flask_babel import _
 from flask_login import login_required
 
+from app.decorators import admin_required
 from app.services.media.service import scan_libraries as scan_media
 
 from ...extensions import db
@@ -89,13 +90,13 @@ def _check_server_connection(data: dict) -> tuple[bool, str]:
 
 @settings_bp.get("")
 @settings_bp.get("/")
-@login_required
+@admin_required
 def page():
     return render_template("settings/index.html")
 
 
 @settings_bp.route("/server", methods=["GET", "POST"])
-@login_required
+@admin_required
 def server_settings():
     setup_mode = bool(session.get("in_setup"))
     current = _load_settings()  # { key: value }
@@ -196,7 +197,7 @@ def server_settings():
 
 
 @settings_bp.route("/scan-libraries", methods=["POST"])
-@login_required
+@admin_required
 def scan_libraries():
     # 1) credentials: prefer form → fallback to DB
     s = {r.key: r.value for r in Settings.query.all()}
@@ -258,7 +259,7 @@ def scan_libraries():
 
 
 @settings_bp.route("/general", methods=["GET", "POST"])
-@login_required
+@admin_required
 def general_settings():
     current = _load_settings()
     form = GeneralSettingsForm(
