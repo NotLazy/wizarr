@@ -137,6 +137,10 @@ invitation_create_request = api.model(
         "library_ids": fields.List(
             fields.Integer, description="Array of library IDs to grant access to"
         ),
+        "required_username": fields.String(
+            description="Required username that must be used when accepting the invitation",
+            required=False,
+        ),
         "allow_downloads": fields.Boolean(
             description="Allow user downloads", default=False
         ),

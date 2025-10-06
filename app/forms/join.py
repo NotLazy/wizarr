@@ -1,6 +1,6 @@
 from flask_wtf import FlaskForm
 from wtforms import PasswordField, StringField
-from wtforms.validators import DataRequired, Optional, Email, EqualTo, Length, Regexp
+from wtforms.validators import DataRequired, Optional, Email, EqualTo, Length, Regexp, ValidationError
 
 
 class JoinForm(FlaskForm):
@@ -35,3 +35,19 @@ class JoinForm(FlaskForm):
         validators=[DataRequired(), Length(min=6, max=10)],
         render_kw={"minlength": 6, "maxlength": 10},
     )
+
+    def validate_username(self, field):
+        """Custom validation for username against invitation requirements."""
+        from app.models import Invitation
+        from sqlalchemy import func
+        
+        # Get the invitation code from the form
+        code = self.code.data
+        if code:
+            invitation = Invitation.query.filter(
+                func.lower(Invitation.code) == code.lower()
+            ).first()
+            
+            if invitation and invitation.required_username:
+                if field.data != invitation.required_username:
+                    raise ValidationError(f"Username must be exactly '{invitation.required_username}' for this invitation.")

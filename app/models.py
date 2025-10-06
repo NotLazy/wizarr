@@ -129,6 +129,9 @@ class Invitation(db.Model):
     allow_live_tv = db.Column(db.Boolean, default=False, nullable=True)
     allow_mobile_uploads = db.Column(db.Boolean, default=False, nullable=True)
 
+    # Required username field for invitations
+    required_username = db.Column(db.String, nullable=True)
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 

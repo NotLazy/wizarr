@@ -601,6 +601,7 @@ class InvitationsListResource(Resource):
                     "libraries": [
                         str(lid) for lid in data.get("library_ids", [])
                     ],  # Convert to strings
+                    "required_username": data.get("required_username"),
                     "allow_downloads": data.get("allow_downloads", False),
                     "allow_live_tv": data.get("allow_live_tv", False),
                     "allow_mobile_uploads": data.get("allow_mobile_uploads", False),

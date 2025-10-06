@@ -119,6 +119,8 @@ def create_invite(form: Any) -> Invitation:
         wizard_bundle_id=(
             int(form.get("wizard_bundle_id")) if form.get("wizard_bundle_id") else None
         ),
+        # Required username field
+        required_username=form.get("required_username") or None,
         # Universal flags for all servers
         allow_downloads=bool(
             form.get("allow_downloads")

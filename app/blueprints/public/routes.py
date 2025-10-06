@@ -198,6 +198,7 @@ def join():
         return render_template(
             "welcome-jellyfin.html",
             code=code,
+            invitation=invitation,
             server_type=server_type,
             server_name=server_name,
             form=form,

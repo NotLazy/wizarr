@@ -206,6 +206,7 @@ class FormBasedWorkflow(InvitationWorkflow):
             template_data={
                 "template_name": "welcome-jellyfin.html",
                 "form": form,
+                "invitation": invitation,
                 "server_type": server_type,
                 "server_name": server_name,
                 "servers": servers,
@@ -428,6 +429,7 @@ class MixedWorkflow(InvitationWorkflow):
                 template_data={
                     "template_name": "hybrid-password-form.html",
                     "code": invitation.code,
+                    "invitation": invitation,
                     "plex_authenticated": True,
                     "plex_token": plex_token,
                     "local_servers": other_servers,

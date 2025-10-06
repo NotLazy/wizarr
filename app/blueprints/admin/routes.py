@@ -78,15 +78,32 @@ def home():
 @login_required
 def now_playing_cards():
     try:
-        from flask_login import current_user
+        from app.services.image_proxy import ImageProxyService
 
-        # Check user role and redirect appropriately
-        if current_user.is_authenticated and hasattr(current_user, 'is_guest') and current_user.is_guest():
-            # Guest users should see invites
-            sessions = None
-        else:
-            # Admin users see the home dashboard
-            sessions = get_now_playing_all_servers()
+        sessions = get_now_playing_all_servers()
+
+        # Generate image proxy tokens for all URLs
+        for session in sessions:
+            server_id = session.get("server_id")
+
+            # Generate token for artwork_url
+            if session.get("artwork_url"):
+                session["artwork_token"] = ImageProxyService.generate_token(
+                    session["artwork_url"], server_id
+                )
+
+            # Generate token for thumbnail_url
+            if session.get("thumbnail_url"):
+                session["thumbnail_token"] = ImageProxyService.generate_token(
+                    session["thumbnail_url"], server_id
+                )
+
+            # Generate token for fallback_artwork_url
+            if session.get("fallback_artwork_url"):
+                session["fallback_artwork_token"] = ImageProxyService.generate_token(
+                    session["fallback_artwork_url"], server_id
+                )
+
         return render_template("admin/now_playing_cards.html", sessions=sessions)
     except Exception as e:
         logging.error(f"Failed to get now playing data: {e}")

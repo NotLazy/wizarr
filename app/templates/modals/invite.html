@@ -41,7 +41,7 @@
                                     class="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg
                                    focus:ring-primary focus:border-primary block w-full p-2.5
                                    dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary dark:focus:border-primary"
-                                    placeholder="{{ _('E.g. XMFGEJIKNQ') }}"
+                                    placeholder="XMFGEJIKNQ"
                                 >
                             </div>
 
@@ -86,7 +86,7 @@
                             <div>
                                 <a
                                     href="#"
-                                    class="block mb-2 text-sm font-medium text-secondary dark:text-primary cursor-pointer"
+                                    class="inline mb-2 text-sm font-medium text-secondary dark:text-primary cursor-pointer"
                                     onclick="event.preventDefault(); showAdvanced();"
                                 >
                                     {{ _("Advanced Options") }}
@@ -100,12 +100,42 @@
                                     <h2 class="text-lg font-semibold text-gray-800 dark:text-gray-200">
                                         {{ _("Invite Settings") }}
                                     </h2>
+
+                                    <!-- Required Username -->
+                                    <div>
+                                        <label
+                                            for="required_username"
+                                            class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                                        >
+                                            {{ _("Username") }}
+                                            <span class="text-gray-500 ml-1">({{ _("optional") }})</span>
+                                        </label>
+                                        <input
+                                            id="required_username"
+                                            name="required_username"
+                                            type="text"
+                                            placeholder="john"
+                                            class="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg
+                                           focus:ring-primary focus:border-primary block w-full p-2.5
+                                           dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary dark:focus:border-primary"
+                                        >
+                                        <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                            When set, the user that accepts this invite will receive the specified username.<br>
+                                            <b>Note</b>: This is not compatible with <b>Unlimited Usages</b>.
+                                        </p>
+                                    </div>
+
                                     <!-- Unlimited Usage -->
-                                    <label class="flex items-center cursor-pointer">
-                                        <input id="unlimited" name="unlimited" type="checkbox" value="true" class="sr-only peer">
-                                        <div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary dark:peer-focus:ring-primary rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-primary dark:peer-checked:bg-primary"></div>
-                                        <span class="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300">{{ _("Unlimited Usages") }}</span>
-                                    </label>
+                                    <div>
+                                        <label class="flex items-center cursor-pointer">
+                                            <input id="unlimited" name="unlimited" type="checkbox" value="true" class="sr-only peer">
+                                            <div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary dark:peer-focus:ring-primary rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-primary dark:peer-checked:bg-primary"></div>
+                                            <span class="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300">{{ _("Unlimited Usages") }}</span>
+                                        </label>
+                                        <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                            When enabled, this invite can be used an unlimited number of times until it expires (if an expiration is set) or is deleted.
+                                        </p>
+                                    </div>
 
                                     <!-- Duration (in days) -->
                                     <div>
@@ -113,7 +143,7 @@
                                             for="duration"
                                             class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
                                         >
-                                            {{ _("Duration") }}
+                                            Account Expiration
                                             <span class="text-gray-500 ml-1">({{ _("in days") }})</span>
                                             <button
                                                 data-popover-target="popover-description"
@@ -148,7 +178,7 @@
                                             <div class="p-3 space-y-2">
                                                 <h3 class="font-semibold text-gray-900 dark:text-white">{{ _("Duration") }}</h3>
                                                 <p>
-                                                    {{ _("When set, invited user(s) will be removed from the Plex server after a number of days. (1-999)") }}
+                                                    {{ _("When set, account(s) created by this invite will be disabled after a number of days. (1-999)") }}
                                                 </p>
                                             </div>
                                             <div data-popper-arrow></div>
@@ -159,10 +189,14 @@
                                             type="number"
                                             min="1"
                                             max="999"
+                                            placeholder="30"
                                             class="mt-1 bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg
                                            focus:ring-primary focus:border-primary block w-full p-2.5
                                            dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary dark:focus:border-primary"
                                         >
+                                        <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                            Once this many days pass after the user accepts the invite, their account will be automatically disabled.
+                                        </p>
                                     </div>
                                 </div>
 
