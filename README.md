@@ -1,5 +1,5 @@
 # Wizarr
-> 🚀 **Development Relaunched:** We're excited to announce that **Wizarr is back in active development**!
+> This is a heavily opinionated and ai assited modification of Wizarr
 <br></br>
 <p align="center">
 
