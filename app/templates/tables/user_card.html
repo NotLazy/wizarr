@@ -43,7 +43,7 @@
                                 {% if user.email == "empty" and user.notes and user.notes.strip() %}
                                 <p class="text-sm text-muted-foreground dark:text-gray-400 truncate">{{ user.notes|nl2br|safe }}</p>
                                 {% else %}
-                                <p class="text-sm text-muted-foreground dark:text-gray-400 truncate">{{ user.email or _('Home User') }}</p>
+                                <p class="text-sm text-muted-foreground dark:text-gray-400 truncate">{{ user.email or _('empty') }}</p>
                                 {% endif %}
                             </div>
                         </div>

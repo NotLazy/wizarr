@@ -431,7 +431,7 @@ class MediaClient(ABC):
             "content_stats": {},  # Minimal for health cards
         }
 
-    def join(self, username: str, password: str, confirm: str, email: str, code: str):
+    def join(self, username: str, password: str, confirm: str, code: str):
         """Process user invitation for this media server.
 
         This is a template method that handles notifications after successful user creation.
@@ -441,14 +441,13 @@ class MediaClient(ABC):
             username: Username for the new account
             password: Password for the new account
             confirm: Password confirmation
-            email: Email address for the new account
             code: Invitation code being used
 
         Returns:
             tuple: (success: bool, message: str)
         """
         # Call the concrete implementation
-        success, message = self._do_join(username, password, confirm, email, code)
+        success, message = self._do_join(username, password, confirm, code)
 
         # Send notification on successful join
         if success:
@@ -466,7 +465,7 @@ class MediaClient(ABC):
 
     @abstractmethod
     def _do_join(
-        self, username: str, password: str, confirm: str, email: str, code: str
+        self, username: str, password: str, confirm: str, code: str
     ):
         """Process user invitation for this media server (implementation method).
 
@@ -477,7 +476,6 @@ class MediaClient(ABC):
             username: Username for the new account
             password: Password for the new account
             confirm: Password confirmation
-            email: Email address for the new account
             code: Invitation code being used
 
         Returns:

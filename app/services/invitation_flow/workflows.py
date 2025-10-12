@@ -56,7 +56,6 @@ class InvitationWorkflow(ABC):
                     username=form_data.get("username", ""),
                     password=form_data.get("password", ""),
                     confirm=form_data.get("confirm_password", ""),
-                    email=form_data.get("email", ""),
                     code=invitation_code,
                 )
 
@@ -114,7 +113,7 @@ class InvitationWorkflow(ABC):
                     try:
                         connection_results = invite_user_to_connections(
                             username=form_data.get("username", ""),
-                            email=form_data.get("email", ""),
+                            # email=form_data.get("email", ""),
                             server_id=server.id,
                             password=form_data.get("password", ""),
                         )

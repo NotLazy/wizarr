@@ -55,7 +55,6 @@ class FormBasedStrategy(AuthenticationStrategy):
         # Extract user data
         user_data = {
             "username": form_data.get("username"),
-            "email": form_data.get("email"),
             "password": form_data.get("password"),
         }
 
@@ -63,7 +62,7 @@ class FormBasedStrategy(AuthenticationStrategy):
 
     def get_required_fields(self) -> list[str]:
         """Get required form fields."""
-        return ["username", "email", "password", "confirm_password"]
+        return ["username", "password", "confirm_password"]
 
 
 class PlexOAuthStrategy(AuthenticationStrategy):

@@ -415,10 +415,8 @@ class JellyfinClient(RestApiMixin):
     # --- public sign-up ---------------------------------------------
 
     def _do_join(
-        self, username: str, password: str, confirm: str, email: str, code: str
+        self, username: str, password: str, confirm: str, code: str
     ) -> tuple[bool, str]:
-        if email and not EMAIL_RE.fullmatch(email):
-            return False, "Invalid e-mail address."
         if not 8 <= len(password) <= 128:
             return False, "Password must be 8–128 characters."
         if password != confirm:
@@ -430,11 +428,11 @@ class JellyfinClient(RestApiMixin):
 
         server_id = getattr(self, "server_id", None)
         existing = User.query.filter(
-            or_(User.username == username, User.email == email),
+            or_(User.username == username),
             User.server_id == server_id,
         ).first()
         if existing:
-            return False, "User or e-mail already exists."
+            return False, "Username already exists."
 
         try:
             user_id = self.create_user(username, password)
@@ -496,7 +494,6 @@ class JellyfinClient(RestApiMixin):
             self._create_user_with_identity_linking(
                 {
                     "username": username,
-                    "email": email,
                     "token": user_id,
                     "code": code,
                     "expires": expires,
