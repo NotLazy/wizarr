@@ -275,7 +275,7 @@ def general_settings():
         current = _load_settings()
         form = GeneralSettingsForm(data=current)
 
-        app_version = os.getenv("APP_VERSION", "dev")
+    app_version = os.getenv("APP_VERSION", "dev")
     if request.headers.get("HX-Request"):
         return render_template("settings/general.html", form=form, app_version=app_version)
     return redirect(url_for("settings.page"))
