@@ -112,7 +112,7 @@
                                     class="w-full px-3 py-2 bg-white/80 dark:bg-gray-700/50 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent backdrop-blur-sm transition-all duration-200 text-sm" + (" opacity-50 cursor-not-allowed" if invitation and invitation.required_username else ""),
                                     placeholder=_("Enter your username"),
                                     value=invitation.required_username if invitation and invitation.required_username else "",
-                                    readonly=invitation and invitation.required_username
+                                    **{'data-readonly': "true" if invitation and invitation.required_username else "false"}
                                 ) }}
                                 {% if invitation and invitation.required_username %}
                                 <p class="text-gray-400 text-xs mt-1">This is the username you'll use to login to Jellyfin</p>
@@ -364,6 +364,11 @@ document.addEventListener('DOMContentLoaded', function() {
     const btnLoading = document.getElementById('btn-loading');
     const buttonText = document.getElementById('button-text');
     const layoutWrapper = mainContainer.parentElement;
+
+    // convert all data-readonly to readonly attributes
+    document.querySelectorAll('input[data-readonly="true"]').forEach(input => {
+        input.setAttribute('readonly', 'true');
+    });
 
     // Enhanced typewriter effect using Anime.js
     function typewriterEffect(element, text, speed = 80) {
